@@ -7,9 +7,42 @@ from selenium.webdriver.common.keys import Keys
 
 # recommend to run with caffeinate on mac
 
+driver = webdriver.Chrome()
 
+def login(username, password):
+    print "Logging you in..."
+    driver.get("https://www.deviantart.com/users/login?ref=http://www.deviantart.com/")
+    username_box = driver.find_element_by_id("login_username")
+    password_box = driver.find_element_by_id("login_password")
+    username_box.send_keys(username)
+    password_box.send_keys(password)
+    password_box.send_keys(Keys.RETURN)
 
-def refresh_bot(url, searchstring, comment):
+def gallery_refresh(url):
+    driver.get(url)
+    # get original url to check against updates
+    original_elem = driver.find_element_by_css_selector(".torpedo-container .thumb .torpedo-thumb-link")
+    original_href = str(original_elem.get_attribute("href"))
+    print original_elem
+    print original_href
+    outerloop = True
+
+    while outerloop:
+        print 'Checking first deviation for original term'
+        elem = driver.find_element_by_css_selector(".torpedo-container .thumb .torpedo-thumb-link")
+        href = str(elem.get_attribute("href"))
+
+        if href != original_href:
+            print 'Update found:', href
+            driver.find_element_by_css_selector(".torpedo-container .thumb .torpedo-thumb-link").click()
+            print '\a'
+        else:
+            print 'Update not found. Waiting for', wait_time, 'seconds.'
+            time.sleep(wait_time)
+            print 'Refreshing...'
+            driver.refresh()
+
+def journal_refresh(url, searchstring, comment):
     driver.get(url)
     outerloop = True
     # strips case from searchstring
@@ -38,28 +71,25 @@ def refresh_bot(url, searchstring, comment):
             print 'Refreshing...'
             driver.refresh()
 
-username = raw_input("Please enter your da username:")
-password = getpass.getpass("Please enter your da password:")
-
-user = raw_input("Please enter the username of the user whose journals you wish to search:")
-
-url = "http://" + user + ".deviantart.com/journal/"
-
-searchstring = str(raw_input("Please enter the term you wish to search for:"))
-comment = str(raw_input("Please enter the text you wish to comment on the journal:"))
-# change how many seconds between refreshes here
-wait_time = int(raw_input("Please enter time (in seconds) between refreshes here:"))
+username = raw_input("Please enter your da username: ")
+password = getpass.getpass("Please enter your da password: ")
+wait_time = int(raw_input("Please enter time (in seconds) between refreshes here: "))
 if wait_time < 60:
-    wait_time = int(raw_input("Please enter a value greater than 60:"))
+    wait_time = int(raw_input("Please enter a value greater than 60: "))
 
-# logging in to da
-print "Logging you in..."
-driver = webdriver.Chrome()
-driver.get("https://www.deviantart.com/users/login?ref=http://www.deviantart.com/")
-username_box = driver.find_element_by_id("login_username")
-password_box = driver.find_element_by_id("login_password")
-username_box.send_keys(username)
-password_box.send_keys(password)
-password_box.send_keys(Keys.RETURN)
+user = raw_input("Please enter the username of the user whose journals/deviations you wish to search: ")
+search_type = int(raw_input("Please enter 1 to search journals, 2 to search deviations: "))
 
-refresh_bot(url, searchstring, comment)
+if search_type == 1:
+    url = "http://" + user + ".deviantart.com/journal/"
+
+    searchstring = str(raw_input("Please enter the term you wish to search for: "))
+    comment = str(raw_input("Please enter the text you wish to comment on the journal: "))
+    login(username, password)
+    journal_refresh(url, searchstring, comment)
+
+
+if search_type == 2:
+    url = "http://" + user + ".deviantart.com/gallery/"
+    login(username, password)
+    gallery_refresh(url)
